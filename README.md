@@ -9,7 +9,7 @@ A high-performance URL shortening service built with Next.js, TypeScript, Hono, 
 - High-performance redirects using Redis caching [x]
 - RESTful API built with Hono middleware [x]
 - Automatic URL expiration [x]
-- Built-in rate limiting [ ]
+- Built-in rate limiting [x]
 - TypeScript for type safety [x]
 - Responsive web interface [ ]
 
