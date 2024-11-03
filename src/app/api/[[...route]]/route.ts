@@ -10,6 +10,7 @@ import {
 } from "@/lib/schemas";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
+import { WEEK_IN_SECONDS } from "@/lib/constants";
 
 const redis = Redis.fromEnv();
 
@@ -63,7 +64,9 @@ const app = new OpenAPIHono()
         },
       });
 
-      await redis.set(shortCode, url);
+      await redis.set(shortCode, url, {
+        ex: WEEK_IN_SECONDS,
+      });
     } catch (error) {
       if (error instanceof Error) {
         return c.json({ error: error.message }, 500);

@@ -1,4 +1,4 @@
-import { RESERVED_PATHS } from "@/lib/constants";
+import { RESERVED_PATHS, WEEK_IN_SECONDS } from "@/lib/constants";
 import prisma from "@/lib/db";
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
@@ -19,6 +19,7 @@ export async function GET(
     const originalUrl = await redis.get<string>(shortCode);
 
     if (originalUrl) {
+      await redis.expire(shortCode, WEEK_IN_SECONDS);
       return NextResponse.redirect(originalUrl, 302);
     }
   }
@@ -29,14 +30,24 @@ export async function GET(
     },
     select: {
       url: true,
+      expiresAt: true,
     },
   });
+
+  if (result && new Date(result.expiresAt) < new Date()) {
+    return NextResponse.json(
+      { error: "Short code has expired" },
+      { status: 404 }
+    );
+  }
 
   if (!result) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  await redis.set(shortCode, result.url);
+  await redis.set(shortCode, result.url, {
+    ex: WEEK_IN_SECONDS,
+  });
 
   return NextResponse.redirect(result.url, 302);
 }
