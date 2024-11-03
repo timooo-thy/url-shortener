@@ -11,6 +11,7 @@ import {
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
 import { WEEK_IN_SECONDS } from "@/lib/constants";
+import { Ratelimit } from "@upstash/ratelimit";
 
 const redis = Redis.fromEnv();
 
@@ -35,6 +36,14 @@ const route = createRoute({
       },
       description: "Shortened URL",
     },
+    429: {
+      content: {
+        "application/json": {
+          schema: ShortenedUrlErrorSchema,
+        },
+      },
+      description: "Rate limit exceeded",
+    },
     500: {
       content: {
         "application/json": {
@@ -49,6 +58,19 @@ const route = createRoute({
 const app = new OpenAPIHono()
   .basePath("/api")
   .openapi(route, async (c) => {
+    const ratelimit = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(5, "60 s"),
+    });
+
+    const ip = c.req.header("x-forwarded-for") ?? "127.0.0.1";
+
+    const { success } = await ratelimit.limit(ip);
+
+    if (!success) {
+      return c.json({ error: "Rate limit exceeded" }, 429);
+    }
+
     const { url, expiresAt } = c.req.valid("json");
 
     const currentCount = await redis.incr("globalCount");
