@@ -1,17 +1,87 @@
-import { Hono } from "hono";
+import prisma from "@/lib/db";
+import { encode } from "@/lib/utils";
+import { Redis } from "@upstash/redis";
 import { handle } from "hono/vercel";
-import auth from "@/features/auth/server/route";
+import { createRoute } from "@hono/zod-openapi";
+import {
+  ShortenedUrlErrorSchema,
+  ShortenedUrlResponseSchema,
+  ShortenedUrlSchema,
+} from "@/lib/schemas";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { swaggerUI } from "@hono/swagger-ui";
 
-export const runtime = "edge";
+const redis = Redis.fromEnv();
 
-const app = new Hono()
+const route = createRoute({
+  method: "post",
+  path: "/shortenUrl",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: ShortenedUrlSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: ShortenedUrlResponseSchema,
+        },
+      },
+      description: "Shortened URL",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ShortenedUrlErrorSchema,
+        },
+      },
+      description: "Internal Server Error",
+    },
+  },
+});
+
+const app = new OpenAPIHono()
   .basePath("/api")
-  .get("/", (c) => {
-    return c.json({
-      message: "Hello Next.js!",
-    });
+  .openapi(route, async (c) => {
+    const { url, expiresAt } = c.req.valid("json");
+
+    const currentCount = await redis.incr("globalCount");
+    const shortCode = encode(currentCount);
+
+    try {
+      await prisma.url.create({
+        data: {
+          shortCode,
+          expiresAt:
+            expiresAt ?? new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+          url,
+        },
+      });
+
+      await redis.set(shortCode, url);
+    } catch (error) {
+      if (error instanceof Error) {
+        return c.json({ error: error.message }, 500);
+      } else {
+        return c.json({ error: "Failed to create short URL" }, 500);
+      }
+    }
+
+    return c.json({ shortCode }, 200);
   })
-  .route("/auth", auth);
+  .doc("/documentation", {
+    openapi: "3.0.0",
+    info: {
+      version: "1.0.0",
+      title: "URL Shortener API Documentation",
+    },
+  })
+  .get("/doc", swaggerUI({ url: "/api/documentation" }));
 
 export const GET = handle(app);
 export const POST = handle(app);
