@@ -9,10 +9,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Scissors, Link2, Zap, Copy } from "lucide-react";
+import { CalendarIcon, Scissors, Link2, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { client } from "@/lib/rpc";
 import { toast } from "sonner";
+import UrlSubmitButton from "./UrlSubmitButton";
 
 export default function UrlForm() {
   const [url, setUrl] = useState("");
@@ -34,8 +35,7 @@ export default function UrlForm() {
     fetchLimits();
   }, [shortUrl]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (remainingLimit <= 0) {
       toast.error("You have reached the daily limit of 10 URLs");
       return;
@@ -81,7 +81,7 @@ export default function UrlForm() {
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
           Shorten Your URL
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form action={handleSubmit} className="space-y-4">
           <div className="relative">
             <Input
               type="url"
@@ -119,13 +119,7 @@ export default function UrlForm() {
               </PopoverContent>
             </Popover>
           </div>
-          <Button
-            type="submit"
-            className="w-full bg-gradient-to-r from-teal-400 to-blue-500 hover:from-teal-500 hover:to-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50"
-          >
-            <Zap className="w-5 h-5 mr-2" />
-            Shorten URL
-          </Button>
+          <UrlSubmitButton />
         </form>
         {shortUrl && (
           <div className="mt-6 p-4 bg-gray-100 rounded-md">
