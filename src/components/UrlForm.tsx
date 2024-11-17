@@ -48,7 +48,7 @@ export default function UrlForm() {
       },
     });
 
-    if (response.ok) {
+    if (response.status === 200) {
       const data = await response.json();
       setShortUrl(process.env.NEXT_PUBLIC_APP_URL + "/" + data.shortCode);
       toast.success("URL shortened successfully!");
