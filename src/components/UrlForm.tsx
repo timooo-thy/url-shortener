@@ -19,7 +19,7 @@ export default function UrlForm() {
   const [url, setUrl] = useState("");
   const [date, setDate] = useState<Date>();
   const [shortUrl, setShortUrl] = useState("");
-  const [remainingLimit, setRemainingLimit] = useState(10);
+  const [remainingLimit, setRemainingLimit] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchLimits = async () => {
@@ -36,6 +36,11 @@ export default function UrlForm() {
   }, [shortUrl]);
 
   const handleSubmit = async () => {
+    if (remainingLimit === null) {
+      toast.error("Failed to fetch daily limit");
+      return;
+    }
+
     if (remainingLimit <= 0) {
       toast.error("You have reached the daily limit of 10 URLs");
       return;
