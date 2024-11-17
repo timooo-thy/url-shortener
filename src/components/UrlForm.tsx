@@ -18,7 +18,7 @@ export default function UrlForm() {
   const [url, setUrl] = useState("");
   const [date, setDate] = useState<Date>();
   const [shortUrl, setShortUrl] = useState("");
-  const [remainingLimit, setRemainingLimit] = useState(0);
+  const [remainingLimit, setRemainingLimit] = useState(10);
 
   useEffect(() => {
     const fetchLimits = async () => {
