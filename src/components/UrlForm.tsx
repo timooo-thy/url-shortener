@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Scissors, Link2, Copy } from "lucide-react";
+import { CalendarIcon, Link2, Copy, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
 import { client } from "@/lib/rpc";
 import { toast } from "sonner";
@@ -80,17 +80,17 @@ export default function UrlForm() {
       <div className="p-8">
         <div className="flex justify-center mb-6 relative">
           <div className="bg-gradient-to-r from-teal-300 via-blue-300 to-indigo-300 p-3 rounded-full">
-            <Scissors className="w-8 h-8 text-white" />
+            <TrendingDown className="w-8 h-8 text-white" />
           </div>
         </div>
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Shorten Your URL
+          Shoooort your link
         </h2>
         <form action={handleSubmit} className="space-y-4">
           <div className="relative">
             <Input
               type="url"
-              placeholder="Enter your long URL here"
+              placeholder="Enter your URL here"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               required

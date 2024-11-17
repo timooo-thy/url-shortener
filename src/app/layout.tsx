@@ -15,7 +15,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Short 'n Sweet",
+  title: "Shoooort - URL Shortener",
   description: "A simple URL shortener",
 };
 
