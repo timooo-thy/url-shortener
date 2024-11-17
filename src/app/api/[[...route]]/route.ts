@@ -4,6 +4,7 @@ import { Redis } from "@upstash/redis";
 import { handle } from "hono/vercel";
 import { createRoute } from "@hono/zod-openapi";
 import {
+  LimitsResponseSchema,
   ShortenedUrlErrorSchema,
   ShortenedUrlResponseSchema,
   ShortenedUrlSchema,
@@ -15,7 +16,7 @@ import { Ratelimit } from "@upstash/ratelimit";
 
 const redis = Redis.fromEnv();
 
-const route = createRoute({
+const postUrlRoute = createRoute({
   method: "post",
   path: "/shortenUrl",
   request: {
@@ -55,12 +56,27 @@ const route = createRoute({
   },
 });
 
+const getLimitsRoute = createRoute({
+  method: "get",
+  path: "/limits",
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: LimitsResponseSchema,
+        },
+      },
+      description: "Retrieve the limits for the given IP",
+    },
+  },
+});
+
 const app = new OpenAPIHono()
   .basePath("/api")
-  .openapi(route, async (c) => {
+  .openapi(postUrlRoute, async (c) => {
     const ratelimit = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(5, "60 s"),
+      limiter: Ratelimit.slidingWindow(10, "86400 s"),
     });
 
     const ip = c.req.header("x-forwarded-for") ?? "127.0.0.1";
@@ -68,7 +84,13 @@ const app = new OpenAPIHono()
     const { success } = await ratelimit.limit(ip);
 
     if (!success) {
-      return c.json({ error: "Rate limit exceeded" }, 429);
+      return c.json(
+        {
+          error:
+            "Your daily rate limit has exceeded. Please try again tomorrow.",
+        },
+        429
+      );
     }
 
     const { url, expiresAt } = c.req.valid("json");
@@ -90,14 +112,30 @@ const app = new OpenAPIHono()
         ex: WEEK_IN_SECONDS,
       });
     } catch (error) {
-      if (error instanceof Error) {
-        return c.json({ error: error.message }, 500);
-      } else {
-        return c.json({ error: "Failed to create short URL" }, 500);
-      }
+      return c.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to create short URL",
+        },
+        500
+      );
     }
 
     return c.json({ shortCode }, 200);
+  })
+  .openapi(getLimitsRoute, async (c) => {
+    const ratelimit = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, "86400 s"),
+    });
+
+    const ip = c.req.header("x-forwarded-for") ?? "127.0.0.1";
+
+    const { remaining } = await ratelimit.getRemaining(ip);
+
+    return c.json({ remaining }, 200);
   })
   .doc("/documentation", {
     openapi: "3.0.0",
@@ -106,7 +144,7 @@ const app = new OpenAPIHono()
       title: "URL Shortener API Documentation",
     },
   })
-  .get("/doc", swaggerUI({ url: "/api/documentation" }));
+  .get("/ui", swaggerUI({ url: "/api/documentation" }));
 
 export const GET = handle(app);
 export const POST = handle(app);

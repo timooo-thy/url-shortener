@@ -10,7 +10,7 @@ export const ShortenedUrlSchema = z.object({
         in: "query",
         required: true,
       },
-      example: "https://google.com",
+      example: "https://shortnsweet.vercel.app",
     }),
   expiresAt: z.coerce
     .date()
@@ -25,13 +25,21 @@ export const ShortenedUrlSchema = z.object({
     }),
 });
 
+export const LimitsResponseSchema = z
+  .object({
+    remaining: z.number().openapi({
+      example: 2,
+    }),
+  })
+  .openapi("Limit Response");
+
 export const ShortenedUrlErrorSchema = z
   .object({
     error: z.string().openapi({
       example: "Failed to create short URL",
     }),
   })
-  .openapi("Error");
+  .openapi("Error Response");
 
 export const ShortenedUrlResponseSchema = z
   .object({
@@ -39,4 +47,4 @@ export const ShortenedUrlResponseSchema = z
       example: "abc123",
     }),
   })
-  .openapi("ShortCode");
+  .openapi("Shortened URL Response");

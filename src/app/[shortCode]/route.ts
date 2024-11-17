@@ -42,7 +42,7 @@ export async function GET(
   }
 
   if (!result) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: "Url not found" }, { status: 404 });
   }
 
   await redis.set(shortCode, result.url, {
