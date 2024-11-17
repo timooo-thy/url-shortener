@@ -1,3 +1,4 @@
+import Footer from "@/components/Footer";
 import UrlForm from "@/components/UrlForm";
 
 export default function Home() {
@@ -10,9 +11,12 @@ export default function Home() {
       </div>
       <UrlForm />
       <div className="mt-8 text-center">
-        <p className="text-base text-gray-600 font-medium">
+        <p className="text-base font-semibold text-gray-600">
           Simplify your links, amplify your reach
         </p>
+      </div>
+      <div className="z-10 my-5">
+        <Footer />
       </div>
     </div>
   );
