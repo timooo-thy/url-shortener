@@ -11,7 +11,6 @@ import {
 } from "@/lib/schemas";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
-import { WEEK_IN_SECONDS } from "@/lib/constants";
 import { Ratelimit } from "@upstash/ratelimit";
 
 const redis = Redis.fromEnv();
@@ -99,7 +98,7 @@ const app = new OpenAPIHono()
     const shortCode = encode(currentCount);
 
     try {
-      const result = await prisma.url.create({
+      await prisma.url.create({
         data: {
           shortCode,
           expiresAt:
@@ -108,20 +107,21 @@ const app = new OpenAPIHono()
         },
       });
 
-      const ttl = Math.min(
-        (new Date(result.expiresAt).getTime() - Date.now()) / 1000,
-        WEEK_IN_SECONDS
-      );
+      // Removed to implement lazy cache
+      // const ttl = Math.min(
+      //   (new Date(result.expiresAt).getTime() - Date.now()) / 1000,
+      //   WEEK_IN_SECONDS
+      // );
 
-      if (ttl > 0) {
-        await redis.set(
-          shortCode,
-          { url: result.url, expiresAt: result.expiresAt },
-          {
-            ex: Math.floor(ttl),
-          }
-        );
-      }
+      // if (ttl > 0) {
+      //   await redis.set(
+      //     shortCode,
+      //     { url: result.url, expiresAt: result.expiresAt },
+      //     {
+      //       ex: Math.floor(ttl),
+      //     }
+      //   );
+      // }
     } catch (error) {
       return c.json(
         {
