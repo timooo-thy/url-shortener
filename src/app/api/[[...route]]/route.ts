@@ -118,7 +118,7 @@ const app = new OpenAPIHono()
           shortCode,
           { url: result.url, expiresAt: result.expiresAt },
           {
-            ex: ttl,
+            ex: Math.floor(ttl),
           }
         );
       }

@@ -37,7 +37,7 @@ export async function GET(
       );
 
       if (url) {
-        await redis.expire(shortCode, ttl);
+        await redis.expire(shortCode, Math.floor(ttl));
         return NextResponse.redirect(url, 302);
       }
     }
@@ -73,7 +73,7 @@ export async function GET(
     shortCode,
     { url: result.url, expiresAt: result.expiresAt },
     {
-      ex: ttl,
+      ex: Math.floor(ttl),
     }
   );
 
