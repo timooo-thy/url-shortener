@@ -109,17 +109,19 @@ const app = new OpenAPIHono()
       });
 
       const ttl = Math.min(
-        new Date(result.expiresAt).getTime() - Date.now() / 1000,
+        (new Date(result.expiresAt).getTime() - Date.now()) / 1000,
         WEEK_IN_SECONDS
       );
 
-      await redis.set(
-        shortCode,
-        { url: result.url, expiresAt: result.expiresAt },
-        {
-          ex: ttl,
-        }
-      );
+      if (ttl > 0) {
+        await redis.set(
+          shortCode,
+          { url: result.url, expiresAt: result.expiresAt },
+          {
+            ex: ttl,
+          }
+        );
+      }
     } catch (error) {
       return c.json(
         {

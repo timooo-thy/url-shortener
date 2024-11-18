@@ -32,7 +32,7 @@ export async function GET(
       }
 
       const ttl = Math.min(
-        new Date(expiresAt).getTime() - Date.now() / 1000,
+        (new Date(expiresAt).getTime() - Date.now()) / 1000,
         WEEK_IN_SECONDS
       );
 
