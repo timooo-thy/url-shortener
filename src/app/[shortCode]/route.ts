@@ -16,11 +16,21 @@ export async function GET(
   }
 
   if (await redis.exists(shortCode)) {
-    const originalUrl = await redis.get<string>(shortCode);
+    const cachedData = await redis.get<{ url: string; expiresAt: string }>(
+      shortCode
+    );
 
-    if (originalUrl) {
-      await redis.expire(shortCode, WEEK_IN_SECONDS);
-      return NextResponse.redirect(originalUrl, 302);
+    if (cachedData) {
+      const { url, expiresAt } = cachedData;
+      const ttl = Math.min(
+        new Date(expiresAt).getTime() - Date.now() / 1000,
+        WEEK_IN_SECONDS
+      );
+
+      if (url) {
+        await redis.expire(shortCode, ttl);
+        return NextResponse.redirect(url, 302);
+      }
     }
   }
 
@@ -45,9 +55,18 @@ export async function GET(
     return NextResponse.json({ error: "Url not found" }, { status: 404 });
   }
 
-  await redis.set(shortCode, result.url, {
-    ex: WEEK_IN_SECONDS,
-  });
+  const ttl = Math.min(
+    new Date(result.expiresAt).getTime() - Date.now() / 1000,
+    WEEK_IN_SECONDS
+  );
+
+  await redis.set(
+    shortCode,
+    JSON.stringify({ url: result.url, expiresAt: result.expiresAt }),
+    {
+      ex: ttl,
+    }
+  );
 
   return NextResponse.redirect(result.url, 302);
 }

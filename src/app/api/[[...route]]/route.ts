@@ -99,7 +99,7 @@ const app = new OpenAPIHono()
     const shortCode = encode(currentCount);
 
     try {
-      await prisma.url.create({
+      const result = await prisma.url.create({
         data: {
           shortCode,
           expiresAt:
@@ -108,9 +108,21 @@ const app = new OpenAPIHono()
         },
       });
 
-      await redis.set(shortCode, url, {
-        ex: WEEK_IN_SECONDS,
-      });
+      const ttl = Math.min(
+        new Date(result.expiresAt).getTime() - Date.now() / 1000,
+        WEEK_IN_SECONDS
+      );
+
+      await redis.set(
+        shortCode,
+        JSON.stringify({
+          url: result.url,
+          expiresAt: result.expiresAt,
+        }),
+        {
+          ex: ttl,
+        }
+      );
     } catch (error) {
       return c.json(
         {
