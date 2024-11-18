@@ -115,10 +115,7 @@ const app = new OpenAPIHono()
 
       await redis.set(
         shortCode,
-        JSON.stringify({
-          url: result.url,
-          expiresAt: result.expiresAt,
-        }),
+        { url: result.url, expiresAt: result.expiresAt },
         {
           ex: ttl,
         }

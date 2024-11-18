@@ -22,6 +22,15 @@ export async function GET(
 
     if (cachedData) {
       const { url, expiresAt } = cachedData;
+
+      if (new Date(expiresAt) < new Date()) {
+        await redis.del(shortCode);
+        return NextResponse.json(
+          { error: "Short code has expired" },
+          { status: 404 }
+        );
+      }
+
       const ttl = Math.min(
         new Date(expiresAt).getTime() - Date.now() / 1000,
         WEEK_IN_SECONDS
@@ -62,7 +71,7 @@ export async function GET(
 
   await redis.set(
     shortCode,
-    JSON.stringify({ url: result.url, expiresAt: result.expiresAt }),
+    { url: result.url, expiresAt: result.expiresAt },
     {
       ex: ttl,
     }
